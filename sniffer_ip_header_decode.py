@@ -1,10 +1,31 @@
 import socket
-
 import os
 import struct
 from ctypes import *
 
-host = "192.168.1.12"
+import threading
+import time
+from netaddr import IPNetwork, IPAddress
+
+host = "192.168.1.10"
+
+subnet = "192.168.1.0/24"
+
+magic_message = "PYTHONRULES!"
+
+def udp_sender(subnet, magic_message):
+    time.sleep(5)
+    sender.socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    for ip in IPNetwork(subnet):
+        try:
+            sender.sendto(magic_message, ("%s" % ip,65212))
+        except:
+            pass
+        
+
+
+
 
 class IP(Structure):
     _fields_ = [
@@ -60,12 +81,17 @@ try:
 
         ip_header = IP(raw_buffer[0:20])
 
-        print "Protocol: %s %s -> %s" % (ip_header.protocol, ip_header.src_address, ip_header.dst_address)
-        if ip_header == "ICMP":
+        # print "Protocol: %s %s -> %s" % (ip_header.protocol, ip_header.src_address, ip_header.dst_address)
+        if ip_header.protocol == "ICMP":
             offset = ip_header.ihl * 4
             buf = raw_buffer[offset:offset + sizeof(ICMP)]
             icmp_header = ICMP(buf)
-            print "ICMP-> Type: %d Code: %d" % (icmp_header.type. icmp_header.code)
+            print "ICMP-> Type: %d Code: %d" % (icmp_header.type, icmp_header.code)
+
+            if icmp_header.code == 3 and icmp_header.type == 3:
+                if IPAddress(ip_header.src_address) in IPNetwork(subnet):
+                    if raw_buffer[len(raw_buffer)-len(magic_message):] == magic_message:
+                        print "Host Up: %s" % ip_header.src_address
 except KeyboardInterrupt:
     if os.name =="nt":
         sniffer.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
